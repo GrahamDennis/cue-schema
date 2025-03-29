@@ -19,9 +19,13 @@
           pkgs = import nixpkgs {
             inherit system;
           };
+          cue-schema = pkgs.callPackage ./package.nix {};
         in
         {
-          packages.cue-schema = pkgs.callPackage ./package.nix {};
+          packages = {
+            inherit cue-schema;
+            default = cue-schema;
+          };
         }
       );
     in
