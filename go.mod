@@ -1,8 +1,6 @@
 module github.com/GrahamDennis/cue-schema
 
-go 1.23.0
-
-toolchain go1.24.1
+go 1.23.4
 
 require (
 	cuelang.org/go v0.12.0
