@@ -68,7 +68,6 @@ func init() {
 	breakingCmd.MarkFlagFilename("new", "cue")
 
 	breakingCmd.Flags().StringVar(&cuePath, "path", "", "CUE path that contains the schema to validate in the CUE files")
-	breakingCmd.MarkFlagRequired("path")
 }
 
 func loadSchema(ctx *cue.Context, filename string) cue.Value {
