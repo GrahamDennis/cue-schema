@@ -53,7 +53,7 @@ func RunBreakingChangeDetection(oldSchemaFilename string, newSchemaFilename stri
 		return err
 	}
 
-	return newValue.Subsume(oldValue, cue.Schema())
+	return newValue.Subsume(oldValue)
 }
 
 func init() {
