@@ -53,6 +53,10 @@ func RunBreakingChangeDetection(oldSchemaFilename string, newSchemaFilename stri
 		return err
 	}
 
+	return IsBackwardsCompatible(oldValue, newValue)
+}
+
+func IsBackwardsCompatible(oldValue cue.Value, newValue cue.Value) error {
 	return newValue.Subsume(oldValue)
 }
 
