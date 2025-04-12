@@ -21,9 +21,8 @@ import (
 )
 
 var (
-	oldSchemaFilename string
-	newSchemaFilename string
-	overridesSchemaFilename string
+	oldSchemaFilenames []string
+	newSchemaFilenames []string
 	cuePath           string
 )
 
@@ -34,7 +33,7 @@ var breakingCmd = &cobra.Command{
 	Long:          `Validate if a schema change is backwards-compatible.`,
 	SilenceErrors: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := RunBreakingChangeDetection(oldSchemaFilename, newSchemaFilename, overridesSchemaFilename, cuePath)
+		err := RunBreakingChangeDetection(oldSchemaFilenames, newSchemaFilenames, cuePath)
 		if err != nil {
 			printError(err)
 			os.Exit(1)
@@ -42,46 +41,36 @@ var breakingCmd = &cobra.Command{
 	},
 }
 
-func RunBreakingChangeDetection(oldSchemaFilename string, newSchemaFilename string, overridesSchemaFilename string, cuePath string) error {
+func RunBreakingChangeDetection(oldSchemaFilenames []string, newSchemaFilenames []string, cuePath string) error {
 	ctx := cuecontext.New()
 
-	oldValue := loadSchema(ctx, oldSchemaFilename, cuePath)
+	oldValue := loadSchemas(ctx, oldSchemaFilenames, cuePath)
 	if err := oldValue.Err(); err != nil {
 		return err
-	}
-	newValue := loadSchema(ctx, newSchemaFilename, cuePath)
+	}	
+
+	newValue := loadSchemas(ctx, newSchemaFilenames, cuePath)
 	if err := newValue.Err(); err != nil {
 		return err
 	}
-	overridesValue := ctx.CompileString("_")
-	if overridesSchemaFilename != "" {
-		overridesValue := loadSchema(ctx, overridesSchemaFilename, cuePath)
-		if err := overridesValue.Err(); err != nil {
-			return err
-		}
-	}
 
-	return IsBackwardsCompatible(oldValue, newValue, overridesValue)
+	return IsBackwardsCompatible(oldValue, newValue)
 }
 
-func IsBackwardsCompatible(oldValue cue.Value, newValue cue.Value, overridesValue cue.Value) error {
-	overriddenOldValue := oldValue.Unify(overridesValue)
-	return newValue.Subsume(overriddenOldValue)
+func IsBackwardsCompatible(oldValue cue.Value, newValue cue.Value) error {
+	return newValue.Subsume(oldValue)
 }
 
 func init() {
 	rootCmd.AddCommand(breakingCmd)
 
-	breakingCmd.Flags().StringVar(&oldSchemaFilename, "old", "", "old CUE schema file")
+	breakingCmd.Flags().StringArrayVar(&oldSchemaFilenames, "old", []string{}, "old CUE schema files")
 	breakingCmd.MarkFlagRequired("old")
 	breakingCmd.MarkFlagFilename("old", "cue")
 
-	breakingCmd.Flags().StringVar(&newSchemaFilename, "new", "", "new CUE schema file")
+	breakingCmd.Flags().StringArrayVar(&newSchemaFilenames, "new", []string{}, "new CUE schema files")
 	breakingCmd.MarkFlagRequired("new")
 	breakingCmd.MarkFlagFilename("new", "cue")
-
-	breakingCmd.Flags().StringVar(&overridesSchemaFilename, "overrides", "", "overrides CUE schema file")
-	breakingCmd.MarkFlagFilename("overrides", "cue")
 
 	breakingCmd.Flags().StringVar(&cuePath, "path", "", "CUE path that contains the schema to validate in the CUE files")
 }
@@ -95,6 +84,17 @@ func loadSchema(ctx *cue.Context, filename string, cuePath string) cue.Value {
 	rootValue := ctx.BuildInstance(insts[0])
 
 	return rootValue.LookupPath(cue.ParsePath(cuePath))
+}
+
+func loadSchemas(ctx *cue.Context, filenames []string, cuePath string) cue.Value {
+	value := ctx.CompileString("_")
+	for _, filename := range(filenames) {
+		value = value.Unify(loadSchema(ctx, filename, cuePath))
+		if err := value.Err(); err != nil {
+			return value
+		}	
+	}
+	return value
 }
 
 func printError(err error) {

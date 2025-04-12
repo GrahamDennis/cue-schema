@@ -1,7 +1,6 @@
 package cmd_test
 
 import (
-	"cmp"
 	"strconv"
 	"testing"
 
@@ -55,9 +54,11 @@ func TestBreakingChange(t *testing.T) {
 			ctx := cuecontext.New()
 			oldValue := ctx.CompileString(tc.old)
 			newValue := ctx.CompileString(tc.new)
-			overrideValue := ctx.CompileString(cmp.Or(tc.override, "_"))
+			if tc.override != "" {
+				oldValue = oldValue.Unify(ctx.CompileString(tc.override))
+			}
 
-			err := cmd.IsBackwardsCompatible(oldValue, newValue, overrideValue)
+			err := cmd.IsBackwardsCompatible(oldValue, newValue)
 			got := err == nil
 
 			if got != tc.compatible {
