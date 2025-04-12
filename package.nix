@@ -10,5 +10,5 @@
         ./main.go
       ];
     };
-    vendorHash = "sha256-F2RRkU1Nxp8euh1b4iDYbYgQRP7A/4wB0mYyimH4J20=";
+    vendorHash = "sha256-RbaaxFtUPp8oaK0XS3g07XWz2MQkx4uAi8tGFND2Lhk=";
 }

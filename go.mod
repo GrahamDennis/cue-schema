@@ -8,7 +8,7 @@ require (
 	golang.org/x/text v0.22.0
 )
 
-replace cuelang.org/go v0.12.0 => github.com/GrahamDennis/cue v0.0.0-20250329053811-d50ef8cddeaf
+replace cuelang.org/go v0.12.0 => github.com/GrahamDennis/cue v0.0.0-20250412044858-d27ca9c98eb2
 
 require (
 	cuelabs.dev/go/oci/ociregistry v0.0.0-20250304105642-27e071d2c9b1 // indirect
