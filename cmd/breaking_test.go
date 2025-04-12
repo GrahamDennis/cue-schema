@@ -31,16 +31,18 @@ func TestBreakingChange(t *testing.T) {
 		5: {compatible: true, old: `#schema: enums: enum1: { value1?: 1, value2?: 2}`, new: `#schema: enums: enum1: {value1?: 1}`, override: `#schema: enums: enum1: {value2: _|_}`},
 		// Renaming an enum option is not compatible except with an override
 		6: {compatible: true, old: `#schema: enums: enum1: { value1?: 1, value2?: 2}`, new: `#schema: enums: enum1: {value1?: 1, value3?: 2}`, override: `#schema: enums: enum1: {value2: _|_}`},
+		// After the enum option has been removed, the override doesn't cause problems
+		7: {compatible: true, old: `#schema: enums: enum1: { value1?: 1}`, new: `#schema: enums: enum1: {value1?: 1}`, override: `#schema: enums: enum1: {value2: _|_}`},
 		// Adding an optional field to a message is compatible
-		7: {compatible: true, old: `#schema: messages: message1?: { field1: int }`, new: `#schema: messages: message1?: { field1: int, field2?: int}`},
+		8: {compatible: true, old: `#schema: messages: message1?: { field1: int }`, new: `#schema: messages: message1?: { field1: int, field2?: int}`},
 		// Adding a required field to a message is not compatible
-		8: {compatible: false, old: `#schema: messages: message1?: { field1: int }`, new: `#schema: messages: message1?: { field1: int, field2: int}`},
+		9: {compatible: false, old: `#schema: messages: message1?: { field1: int }`, new: `#schema: messages: message1?: { field1: int, field2: int}`},
 		// Removing an optional field from a message is not compatible
-		9: {compatible: false, old: `#schema: messages: message1?: { field1: int, field2?: int}`, new: `#schema: messages: message1?: { field1: int }`},
+		10: {compatible: false, old: `#schema: messages: message1?: { field1: int, field2?: int}`, new: `#schema: messages: message1?: { field1: int }`},
 		// Removing a required field from a message is not compatible
-		10: {compatible: false, old: `#schame: messages: message1?: { field1: int, field2: int}`, new: `#schema: messages: message1?: { field1: int }`},
+		11: {compatible: false, old: `#schame: messages: message1?: { field1: int, field2: int}`, new: `#schema: messages: message1?: { field1: int }`},
 		// Defining enums when they weren't defined before is compatible
-		111: {compatible: true, old: `#schema: messages: {}`, new: `#schema: { messages: {}, enums?: enum1: {value1?: 1 } }`},
+		12: {compatible: true, old: `#schema: messages: {}`, new: `#schema: { messages: {}, enums?: enum1: {value1?: 1 } }`},
 	}
 
 	for i, tc := range testCases {
