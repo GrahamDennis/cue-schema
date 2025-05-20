@@ -23,7 +23,7 @@ import (
 var (
 	oldSchemaFilenames []string
 	newSchemaFilenames []string
-	cuePath           string
+	cuePath            string
 )
 
 // breakingCmd represents the breaking command
@@ -47,7 +47,7 @@ func RunBreakingChangeDetection(oldSchemaFilenames []string, newSchemaFilenames 
 	oldValue := loadSchemas(ctx, oldSchemaFilenames, cuePath)
 	if err := oldValue.Err(); err != nil {
 		return err
-	}	
+	}
 
 	newValue := loadSchemas(ctx, newSchemaFilenames, cuePath)
 	if err := newValue.Err(); err != nil {
@@ -88,11 +88,11 @@ func loadSchema(ctx *cue.Context, filename string, cuePath string) cue.Value {
 
 func loadSchemas(ctx *cue.Context, filenames []string, cuePath string) cue.Value {
 	value := ctx.CompileString("_")
-	for _, filename := range(filenames) {
+	for _, filename := range filenames {
 		value = value.Unify(loadSchema(ctx, filename, cuePath))
 		if err := value.Err(); err != nil {
 			return value
-		}	
+		}
 	}
 	return value
 }
@@ -108,7 +108,7 @@ func printError(err error) {
 		p.Fprintf(w, format, args...)
 	}
 	pwd, _ := os.Getwd()
-	errors.Print(os.Stderr, err, &errors.Config{
+	PrintFirstTwoErrors(os.Stderr, err, &errors.Config{
 		Format: format,
 		Cwd:    pwd,
 	})
@@ -118,4 +118,10 @@ func getLang() language.Tag {
 	loc := cmp.Or(os.Getenv("LC_ALL"), os.Getenv("LANG"))
 	loc, _, _ = strings.Cut(loc, ".")
 	return language.Make(loc)
+}
+
+func PrintFirstTwoErrors(w io.Writer, err error, cfg *errors.Config) {
+	for _, e := range errors.Errors(err)[0:2] {
+		errors.Print(w, e, cfg)
+	}
 }

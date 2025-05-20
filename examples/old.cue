@@ -1,0 +1,1 @@
+#schema: messages: message1?: { field1: int, field2: int}
