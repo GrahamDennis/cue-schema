@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"cmp"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -21,9 +22,11 @@ import (
 )
 
 var (
-	oldSchemaFilenames []string
-	newSchemaFilenames []string
-	cuePath            string
+	oldSchemaFilenames       []string
+	newSchemaFilenames       []string
+	cuePath                  string
+	maxErrors                int = 0
+	suppressErrorsLongerThan int = 0
 )
 
 // breakingCmd represents the breaking command
@@ -73,6 +76,9 @@ func init() {
 	breakingCmd.MarkFlagFilename("new", "cue")
 
 	breakingCmd.Flags().StringVar(&cuePath, "path", "", "CUE path that contains the schema to validate in the CUE files")
+
+	breakingCmd.Flags().IntVar(&maxErrors, "max-errors", 0, "maximum number of errors to report")
+	breakingCmd.Flags().IntVar(&suppressErrorsLongerThan, "suppress-errors-longer-than", 0, "suppress errors longer than this length")
 }
 
 func loadSchema(ctx *cue.Context, filename string, cuePath string) cue.Value {
@@ -108,7 +114,7 @@ func printError(err error) {
 		p.Fprintf(w, format, args...)
 	}
 	pwd, _ := os.Getwd()
-	PrintFirstTwoErrors(os.Stderr, err, &errors.Config{
+	printErrors(os.Stderr, err, &errors.Config{
 		Format: format,
 		Cwd:    pwd,
 	})
@@ -120,9 +126,17 @@ func getLang() language.Tag {
 	return language.Make(loc)
 }
 
-func PrintFirstTwoErrors(w io.Writer, err error, cfg *errors.Config) {
+func printErrors(w io.Writer, err error, cfg *errors.Config) {
 	errs := errors.Errors(err)
-	for _, e := range errs[0:min(2, len(errs))] {
-		errors.Print(w, e, cfg)
+	maxErrorsToDisplay := len(errs)
+	if maxErrors > 0 {
+		maxErrorsToDisplay = min(maxErrorsToDisplay, maxErrors)
+	}
+	for _, e := range errs[0:maxErrorsToDisplay] {
+		if suppressErrorsLongerThan > 0 && len(e.Error()) > suppressErrorsLongerThan {
+			fmt.Fprintf(w, "Suppressed error longer than %d characters\n", suppressErrorsLongerThan)
+		} else {
+			errors.Print(w, e, cfg)
+		}
 	}
 }
