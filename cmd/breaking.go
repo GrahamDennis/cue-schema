@@ -121,7 +121,8 @@ func getLang() language.Tag {
 }
 
 func PrintFirstTwoErrors(w io.Writer, err error, cfg *errors.Config) {
-	for _, e := range errors.Errors(err)[0:2] {
+	errs := errors.Errors(err)
+	for _, e := range errs[0:min(2, len(errs))] {
 		errors.Print(w, e, cfg)
 	}
 }
