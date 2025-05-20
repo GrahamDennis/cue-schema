@@ -40,7 +40,7 @@ func TestBreakingChange(t *testing.T) {
 		// Removing an optional field from a message is not compatible
 		10: {compatible: false, old: `#schema: messages: message1?: { field1: int, field2?: int}`, new: `#schema: messages: message1?: { field1: int }`},
 		// Removing a required field from a message is not compatible
-		11: {compatible: false, old: `#schame: messages: message1?: { field1: int, field2: int}`, new: `#schema: messages: message1?: { field1: int }`},
+		11: {compatible: false, old: `#schema: messages: message1?: { field1: int, field2: int}`, new: `#schema: messages: message1?: { field1: int }`},
 		// Defining enums when they weren't defined before is compatible
 		12: {compatible: true, old: `#schema: messages: {}`, new: `#schema: { messages: {}, enums?: enum1: {value1?: 1 } }`},
 	}
