@@ -8,6 +8,14 @@ import (
 	"github.com/GrahamDennis/cue-schema/cmd"
 )
 
+func TestCompile(t *testing.T) {
+	ctx := cuecontext.New()
+	value := ctx.CompileString("#schema: messages: foo?: _|_")
+	if err := value.Err(); err != nil {
+		t.Errorf("compilation error: %v", err)
+	}
+}
+
 func TestBreakingChange(t *testing.T) {
 	type breakingChangeTest struct {
 		compatible bool
@@ -22,17 +30,23 @@ func TestBreakingChange(t *testing.T) {
 		// Remove message is not compatible
 		1: {compatible: false, old: `#schema: messages: foo?: string`, new: `#schema: messages: {}`},
 		// Remove message with override is compatible
-		2: {compatible: true, old: `#schema: messages: foo?: string`, new: `#schema: messages: {}`, override: `#schema: messages: foo: _|_`},
+		2: {compatible: true, old: `#schema: messages: foo?: string`, new: `#schema: messages: {}`, override: `#schema: messages: foo?: _|_`},
+		// Remove message with wrong override is not compatible
+		21: {compatible: false, old: `#schema: messages: foo?: string`, new: `#schema: messages: {}`, override: `#schema: messages: bar?: _|_`},
 		// Add new enum option is compatible
 		3: {compatible: true, old: `#schema: enums: enum1: { value1?: 1}`, new: `#schema: enums: enum1: {value1?: 1, value2?: 2}`},
 		// Removing an enum option is not compatible
 		4: {compatible: false, old: `#schema: enums: enum1: { value1?: 1, value2?: 2}`, new: `#schema: enums: enum1: {value1?: 1}`},
 		// Removing an enum option is not compatible except with an override
-		5: {compatible: true, old: `#schema: enums: enum1: { value1?: 1, value2?: 2}`, new: `#schema: enums: enum1: {value1?: 1}`, override: `#schema: enums: enum1: {value2: _|_}`},
+		5: {compatible: true, old: `#schema: enums: enum1: { value1?: 1, value2?: 2}`, new: `#schema: enums: enum1: {value1?: 1}`, override: `#schema: enums: enum1: {value2?: _|_}`},
+		// Removing an enum option is not compatible with the wrong override
+		51: {compatible: false, old: `#schema: enums: enum1: { value1?: 1, value2?: 2}`, new: `#schema: enums: enum1: {value1?: 1}`, override: `#schema: enums: enum1: {value7?: _|_}`},
 		// Renaming an enum option is not compatible except with an override
-		6: {compatible: true, old: `#schema: enums: enum1: { value1?: 1, value2?: 2}`, new: `#schema: enums: enum1: {value1?: 1, value3?: 2}`, override: `#schema: enums: enum1: {value2: _|_}`},
+		6: {compatible: true, old: `#schema: enums: enum1: { value1?: 1, value2?: 2}`, new: `#schema: enums: enum1: {value1?: 1, value3?: 2}`, override: `#schema: enums: enum1: {value2?: _|_}`},
+		// Renaming an enum option is not compatible with the wrong override
+		61: {compatible: false, old: `#schema: enums: enum1: { value1?: 1, value2?: 2}`, new: `#schema: enums: enum1: {value1?: 1, value3?: 2}`, override: `#schema: enums: enum1: {value7?: _|_}`},
 		// After the enum option has been removed, the override doesn't cause problems
-		7: {compatible: true, old: `#schema: enums: enum1: { value1?: 1}`, new: `#schema: enums: enum1: {value1?: 1}`, override: `#schema: enums: enum1: {value2: _|_}`},
+		7: {compatible: true, old: `#schema: enums: enum1: { value1?: 1}`, new: `#schema: enums: enum1: {value1?: 1}`, override: `#schema: enums: enum1: {value2?: _|_}`},
 		// Adding an optional field to a message is compatible
 		8: {compatible: true, old: `#schema: messages: message1?: { field1: int }`, new: `#schema: messages: message1?: { field1: int, field2?: int}`},
 		// Adding a required field to a message is not compatible
@@ -57,9 +71,22 @@ func TestBreakingChange(t *testing.T) {
 		t.Run(strconv.Itoa(i)+"/"+key, func(t *testing.T) {
 			ctx := cuecontext.New()
 			oldValue := ctx.CompileString(tc.old)
+			if err := oldValue.Err(); err != nil {
+				t.Errorf("compilation error: %v", err)
+			}
 			newValue := ctx.CompileString(tc.new)
+			if err := newValue.Err(); err != nil {
+				t.Errorf("compilation error: %v", err)
+			}
 			if tc.override != "" {
 				oldValue = oldValue.Unify(ctx.CompileString(tc.override))
+				if err := oldValue.Err(); err != nil {
+					t.Errorf("compilation error: %v", err)
+				}
+				newValue = newValue.Unify(ctx.CompileString(tc.override))
+				if err := newValue.Err(); err != nil {
+					t.Errorf("compilation error: %v", err)
+				}
 			}
 
 			err := cmd.IsBackwardsCompatible(oldValue, newValue)
