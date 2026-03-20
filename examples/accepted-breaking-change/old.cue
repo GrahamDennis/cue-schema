@@ -1,0 +1,1 @@
+#schema: messages: foo?: string
